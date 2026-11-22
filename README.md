@@ -1,246 +1,1008 @@
-# PanicGuard - Real-Time Panic Attack Detection, Prediction & Response System
+# \# 🛡️ PanicGuard
 
-## Features
+# 
 
-- Real-time biosignal monitoring (Heart Rate, GSR, Respiration)
-- Multi-model AI detection system (Rule-based + Bi-LSTM + CNN + Autoencoder + Random Forest)
-- Intelligent fusion engine combining all 4 models
-- State-based system behavior (IDLE -> ALERT -> EPISODE -> SOS -> COOLDOWN)
-- Automated calming interventions (Haptic, Audio, Water Mist, LED, SOS)
-- Live monitoring dashboard at http://localhost:8080
-- Cloud integration via MQTT
+# \### Subject-Independent Panic/Stress Detection from Wearable Biosignals
 
----
+# 
 
-## System Architecture
+# PanicGuard is an AI-powered wearable biosignal monitoring system designed to detect elevated panic/stress patterns using multiple machine-learning models and a real-time fusion engine.
 
-```
-Sensors -> Feature Extractor -> ML Models -> Fusion Engine -> State Machine -> Interventions
-                                                    |
-                                              Dashboard / MQTT
-```
+# 
 
-- Event-driven architecture (Event Bus)
-- Scalable and modular design
-- Easy to upgrade individual components
+# The system combines \*\*Bi-LSTM, 1D-CNN, Autoencoder anomaly detection, and HRV-based Random Forest classification\*\* to estimate panic risk and trigger appropriate interventions through a real-time dashboard.
 
----
+# 
 
-## Sensors
+# > \*\*Academic/Research Project:\*\* PanicGuard is intended for research and educational purposes and is \*\*not a medical diagnostic or emergency-response device\*\*.
 
-| Sensor       | Frequency | Measures                  |
-|-------------|----------|---------------------------|
-| PPG         | 25 Hz    | Heart rate, SpO2          |
-| GSR         | 10 Hz    | Skin conductance (stress) |
-| Respiration | 5 Hz     | Breathing patterns        |
+# 
 
----
+# \---
 
-## Feature Extraction
+# 
 
-The system computes **13 physiological features**:
+# \## 🚀 Key Features
 
-- `hr_mean`, `hr_std` — Heart rate mean and variability
-- `rmssd`, `sdnn` — HRV (Heart Rate Variability)
-- `scl_mean`, `scr_peak_rate`, `scr_amplitude` — Skin conductance
-- `resp_rate`, `resp_regularity`, `resp_depth` — Breathing patterns
-- `temp_delta` — Skin temperature change
-- `motion_rms` — Motion filtering (exercise suppression)
-- `hr_resp_coupling` — Heart-respiration synchronization (RSA)
+# 
 
----
+# \- 🧠 \*\*Bi-LSTM\*\* for temporal panic/stress patterns
 
-## Machine Learning Models
+# \- 📈 \*\*1D-CNN\*\* for short-term biosignal patterns
 
-### 1. Rule-Based Classifier
-- Instant decision making, no training required
-- Clinically inspired thresholds (HR elevation, RMSSD drop, GSR spike, breathing irregularity)
-- Works on day 1 without any data
+# \- 🔍 \*\*Autoencoder\*\* for anomaly detection
 
-### 2. Bi-LSTM + Attention
-- Captures long-range temporal dependencies in biosignals
-- Bidirectional LSTM reads signals forward AND backward
-- Attention layer focuses on most panic-predictive timesteps
-- Trained on WESAD dataset (15 subjects)
+# \- ❤️ \*\*HRV Random Forest classifier\*\*
 
-### 3. 1D CNN with Residual Blocks (NEW)
-- Detects local spike patterns: sudden HR acceleration, SCR bursts, breathing fragmentation
-- Deep residual architecture (3 blocks, 64/128/256 filters)
-- GlobalMaxPooling captures peak activation (ideal for spike detection)
-- Faster than LSTM at inference (no recurrence)
-- Complementary to LSTM: CNN catches sharp transient events, LSTM catches long-range buildup
-- Trained on WESAD dataset
+# \- 🔀 \*\*Multi-model fusion engine\*\*
 
-### 4. LSTM Autoencoder
-- Unsupervised anomaly detection
-- Trained on normal physiology only
-- High reconstruction error = abnormal/panic pattern detected
-- Catches unknown panic patterns the LSTM hasn't seen
+# \- ⚙️ Real-time panic \*\*state machine\*\*
 
-### 5. Random Forest (HRV-based)
-- Trained on HRV Stress Dataset (369K windows, 34 HRV features)
-- Uses frequency-domain features: RMSSD, LF/HF, pNN50, sampen, higuci
-- Fast and highly accurate on structured HRV data
+# \- 📊 Live FastAPI dashboard
 
----
+# \- 🔌 WebSocket-based real-time updates
 
-## Model Accuracy Results
+# \- 🆘 SOS escalation mechanism
 
-### HRV Random Forest
-- **Accuracy: 100%** | **ROC-AUC: 1.0000**
-- Precision / Recall / F1: 100% on all classes
-- Dataset: HRV Stress Dataset (41,033 test samples)
+# \- ❌ User \*\*Cancel Intervention\*\* override
 
-### Bi-LSTM + Attention
-- **Accuracy: 94.5%** | **ROC-AUC: 0.9845**
+# \- 📡 MQTT cloud integration
 
-| Class  | Precision | Recall | F1   |
-|--------|----------|--------|------|
-| Normal | 1.00     | 0.93   | 0.96 |
-| Stress | 0.81     | 0.99   | 0.89 |
+# \- 🧪 Simulation mode — no physical hardware required
 
-Key insight: 99% recall means almost zero missed panic events.
+# \- 🐳 Docker support
 
-### 1D CNN (Residual)
-- **Accuracy: 93%** | **ROC-AUC: 0.9945**
+# \- 🧪 Integration tests
 
-| Class  | Precision | Recall | F1   |
-|--------|----------|--------|------|
-| Normal | 1.00     | 0.91   | 0.96 |
-| Stress | 0.77     | 1.00   | 0.87 |
+# 
 
-Key insight: 100% recall on stress class — never misses a panic event. Highest AUC of all models.
+# \---
 
-### LSTM Autoencoder
-- **Accuracy: 79.5%** | **ROC-AUC: 0.7677**
-- Not a direct classifier — works as anomaly detector
-- Detects unknown/novel panic patterns
+# 
 
----
+# \# 🏗️ System Architecture
 
-## Fusion Engine
+# 
 
-All 4 models are combined using a weighted fusion formula:
+# ```text
 
-```
-fusion_score = 0.40 x Bi-LSTM
-             + 0.25 x CNN
-             + 0.20 x Autoencoder
-             + 0.15 x Rule-based
-```
+# Wearable / Simulated Sensors
 
-Decision: FUSION HIGH if:
-- LSTM score > 0.55, OR
-- CNN score > 0.55, OR
-- Anomaly score > 0.50, OR
-- Fusion score > 0.60
+# &#x20;         │
 
-Why fusion?
-- LSTM captures temporal buildup toward panic
-- CNN catches sharp transient spikes
-- Autoencoder detects novel anomalies
-- Rule-based provides instant clinical baseline
+# &#x20;         ▼
 
----
+# &#x20;  Sensor Processing
 
-## State Machine
+# &#x20;         │
 
-| State    | Score Threshold | Description             |
-|----------|----------------|-------------------------|
-| IDLE     | < 0.40         | Normal monitoring       |
-| ALERT    | > 0.40         | Early warning, soft haptic |
-| EPISODE  | > 0.60         | Full intervention suite |
-| SOS      | > 0.80 (15s)   | Emergency escalation    |
-| COOLDOWN | < 0.35         | Recovery phase          |
+# &#x20;         ├──────────────► Bi-LSTM
 
----
+# &#x20;         │
 
-## Interventions
+# &#x20;         ├──────────────► 1D-CNN
 
-| Type       | Action                                        |
-|------------|-----------------------------------------------|
-| Haptic     | Breathing guide vibration (4s on / 6s off)   |
-| Audio      | Calming voice / ambient sounds               |
-| Water Mist | 800ms pump pulse (activates diving reflex)   |
-| LED        | Color-coded ring (green/amber/blue/red)      |
-| SOS        | GPS location + message to emergency contacts |
+# &#x20;         │
 
----
+# &#x20;         ├──────────────► Autoencoder
 
-## Live Dashboard
+# &#x20;         │
 
-Open http://localhost:8080 while simulation is running.
+# &#x20;         └──────────────► HRV Random Forest
 
-- Real-time panic score gauge (color changes with severity)
-- 120-second score history chart
-- Live sensor readings (HR, SpO2, GSR, Resp)
-- All 4 model score bars updating in real time
-- Fusion risk badge (HIGH/LOW)
-- Episode log with timestamps
-- Override buttons (Cancel Intervention / Trigger SOS)
-- WebSocket auto-reconnect
+# &#x20;                             │
 
----
+# &#x20;                             ▼
 
-## Cloud Integration (MQTT)
+# &#x20;                   ┌─────────────────┐
 
-Enable in `config/device.yaml` by setting `mqtt.enabled: true`.
+# &#x20;                   │  Fusion Engine   │
 
-Topics published:
-```
-panicguard/{device_id}/score      - live panic score
-panicguard/{device_id}/state      - current state
-panicguard/{device_id}/fusion     - full model breakdown
-panicguard/{device_id}/episode    - episode events
-panicguard/{device_id}/status     - 30s heartbeat
-```
+# &#x20;                   └────────┬────────┘
 
-Default broker: `test.mosquitto.org` (free public, no setup needed)
+# &#x20;                            │
 
----
+# &#x20;                            ▼
 
-## Datasets
+# &#x20;                    Panic State Machine
 
-| Dataset          | Subjects | Samples  | Used For                        |
-|-----------------|----------|----------|---------------------------------|
-| WESAD           | 15       | 1,643    | Bi-LSTM, CNN, Autoencoder       |
-| HRV Stress      | 1        | 410,322  | Random Forest classifier        |
+# &#x20;                            │
 
----
+# &#x20;             ┌──────────────┼──────────────┐
 
-## Quickstart
+# &#x20;             ▼              ▼              ▼
 
-```bash
-pip install -r requirements.txt
+# &#x20;       Intervention       Dashboard        SOS
 
-# Run simulation (no hardware needed)
-python main.py --mode simulate --panic-at 15 --duration 180
+# &#x20;       Controller        WebSocket       Escalation
 
-# Open dashboard in browser
+# ```
+
+# 
+
+# \---
+
+# 
+
+# \# 🧠 Machine Learning Models
+
+# 
+
+# PanicGuard uses four complementary models.
+
+# 
+
+# \### 1. Bi-LSTM
+
+# 
+
+# The Bi-LSTM processes sequential biosignal information and captures temporal changes associated with increasing stress or panic.
+
+# 
+
+# \### 2. 1D-CNN
+
+# 
+
+# The CNN identifies short-term patterns and transient changes in biosignal sequences.
+
+# 
+
+# \### 3. Autoencoder
+
+# 
+
+# The Autoencoder learns normal signal patterns and detects anomalous physiological behavior.
+
+# 
+
+# \### 4. HRV Random Forest
+
+# 
+
+# The HRV classifier uses heart-rate-variability features to provide an additional stress/panic prediction signal.
+
+# 
+
+# \---
+
+# 
+
+# \# 🔀 Fusion Engine
+
+# 
+
+# The four prediction signals are combined using a weighted fusion formula:
+
+# 
+
+# ```text
+
+# fusion\_score = 0.40 × Bi-LSTM
+
+# &#x20;            + 0.25 × CNN
+
+# &#x20;            + 0.20 × Autoencoder
+
+# &#x20;            + 0.15 × Rule-based
+
+# ```
+
+# 
+
+# The system considers the fusion result together with individual model signals.
+
+# 
+
+# \### Fusion HIGH conditions
+
+# 
+
+# A high-risk fusion decision can occur when:
+
+# 
+
+# ```text
+
+# LSTM score > 0.55
+
+# OR CNN score > 0.55
+
+# OR anomaly score > 0.50
+
+# OR fusion score > 0.60
+
+# ```
+
+# 
+
+# \### Why use fusion?
+
+# 
+
+# Each model captures a different characteristic:
+
+# 
+
+# | Model | Main purpose |
+
+# |---|---|
+
+# | Bi-LSTM | Temporal buildup and sequential patterns |
+
+# | 1D-CNN | Short-term/transient signal patterns |
+
+# | Autoencoder | Novel physiological anomalies |
+
+# | HRV / Rule-based | Additional physiological risk information |
+
+# 
+
+# Combining multiple signals reduces dependence on a single model.
+
+# 
+
+# \---
+
+# 
+
+# \# ⚙️ Panic State Machine
+
+# 
+
+# PanicGuard uses a state machine to determine the appropriate response.
+
+# 
+
+# | State | Approximate threshold | Description |
+
+# |---|---:|---|
+
+# | IDLE | `< 0.40` | Normal monitoring |
+
+# | ALERT | `> 0.40` | Early warning |
+
+# | EPISODE | `> 0.60` | Intervention activated |
+
+# | SOS | `> 0.80` | Emergency escalation |
+
+# | COOLDOWN | `< 0.35` | Recovery phase |
+
+# 
+
+# The state machine also supports user overrides and SOS cooldown protection.
+
+# 
+
+# \---
+
+# 
+
+# \# 🛠️ Interventions
+
+# 
+
+# | Intervention | Action |
+
+# |---|---|
+
+# | Haptic | Breathing-guidance vibration |
+
+# | Audio | Calming audio / voice |
+
+# | Water Mist | Configurable pump pulse |
+
+# | LED | Color-coded status indication |
+
+# | SOS | Emergency-contact escalation |
+
+# 
+
+# In simulation mode, the intervention drivers operate without requiring physical hardware.
+
+# 
+
+# \---
+
+# 
+
+# \# 📊 Live Dashboard
+
+# 
+
+# The dashboard is available at:
+
+# 
+
+# ```text
+
 # http://localhost:8080
 
-# Train models (requires WESAD dataset)
-python -m ml.train_wesad --wesad path/to/WESAD
-python -m ml.train_hrv
+# ```
 
-# Evaluate all models
-python evaluate_models.py
-```
+# 
 
----
+# It provides:
 
-## Project Structure
+# 
 
-```
-panic_guard/
-├── core/           - Event bus, state machine
-├── sensors/        - PPG, GSR, respiration simulators + hardware drivers
-├── ml/             - Feature extraction, Bi-LSTM, CNN, Autoencoder, RF, Fusion
-├── interventions/  - Haptic, audio, water, LED, SOS drivers
-├── cloud/          - MQTT bridge
-├── app/            - FastAPI server + live dashboard
-├── models/         - Trained model files (generated after training)
-├── data/           - Extracted feature CSVs (generated after training)
-├── config/         - Device configuration
-└── tests/          - Integration tests (4/4 passing)
-```
+# \- Real-time panic-risk gauge
+
+# \- Panic-score history
+
+# \- Live sensor readings
+
+# \- Bi-LSTM score
+
+# \- CNN score
+
+# \- Autoencoder anomaly score
+
+# \- HRV/rule-based information
+
+# \- Fusion-risk indicator
+
+# \- Current state
+
+# \- Episode log
+
+# \- WebSocket live updates
+
+# \- \*\*Cancel Intervention\*\* button
+
+# \- \*\*Trigger SOS\*\* button
+
+# \- Automatic WebSocket reconnection
+
+# 
+
+# \---
+
+# 
+
+# \# 🖥️ Quick Start — Windows
+
+# 
+
+# \## 1. Clone the repository
+
+# 
+
+# ```bash
+
+# git clone https://github.com/bhavatejv/PanicGuard.git
+
+# cd PanicGuard
+
+# ```
+
+# 
+
+# \## 2. Create a Python virtual environment
+
+# 
+
+# Python \*\*3.11\*\* is recommended.
+
+# 
+
+# ```powershell
+
+# py -3.11 -m venv venv311
+
+# ```
+
+# 
+
+# Activate it:
+
+# 
+
+# ```powershell
+
+# .\\venv311\\Scripts\\Activate.ps1
+
+# ```
+
+# 
+
+# \## 3. Install dependencies
+
+# 
+
+# ```powershell
+
+# pip install -r requirements.txt
+
+# ```
+
+# 
+
+# \## 4. Run the simulation
+
+# 
+
+# ```powershell
+
+# python main.py --mode simulate --panic-at 15 --duration 180
+
+# ```
+
+# 
+
+# Then open:
+
+# 
+
+# ```text
+
+# http://localhost:8080
+
+# ```
+
+# 
+
+# The simulation generates sensor data and runs the complete PanicGuard pipeline.
+
+# 
+
+# \---
+
+# 
+
+# \# ⚡ One-Click Windows Launcher
+
+# 
+
+# After cloning and installing dependencies, you can start PanicGuard using:
+
+# 
+
+# ```powershell
+
+# .\\start\_panicguard.bat
+
+# ```
+
+# 
+
+# The launcher:
+
+# 
+
+# 1\. Activates the Python environment
+
+# 2\. Starts the PanicGuard simulation
+
+# 3\. Waits for the FastAPI server
+
+# 4\. Opens the dashboard automatically
+
+# 
+
+# Dashboard:
+
+# 
+
+# ```text
+
+# http://localhost:8080
+
+# ```
+
+# 
+
+# \---
+
+# 
+
+# \# 🧪 Model Training
+
+# 
+
+# The trained model binaries are intentionally \*\*not stored in this Git repository\*\* because they are large.
+
+# 
+
+# The following files are generated locally after training:
+
+# 
+
+# ```text
+
+# models/
+
+# ├── bilstm.keras
+
+# ├── bilstm.tflite
+
+# ├── bilstm\_scaler.pkl
+
+# ├── cnn.keras
+
+# ├── cnn.tflite
+
+# ├── autoencoder.keras
+
+# ├── autoencoder.tflite
+
+# ├── autoencoder\_threshold.pkl
+
+# └── hrv\_panic\_classifier.pkl
+
+# ```
+
+# 
+
+# \## WESAD Training
+
+# 
+
+# Download and extract the WESAD dataset separately.
+
+# 
+
+# Then run:
+
+# 
+
+# ```powershell
+
+# python -m ml.train\_wesad --wesad "PATH\_TO\_WESAD"
+
+# ```
+
+# 
+
+# Example:
+
+# 
+
+# ```powershell
+
+# python -m ml.train\_wesad --wesad "D:\\WESAD\\WESAD"
+
+# ```
+
+# 
+
+# \## HRV Training
+
+# 
+
+# After obtaining the required HRV dataset:
+
+# 
+
+# ```powershell
+
+# python -m ml.train\_hrv --data-dir "PATH\_TO\_HRV\_DATA" --model-dir "models"
+
+# ```
+
+# 
+
+# Example:
+
+# 
+
+# ```powershell
+
+# python -m ml.train\_hrv --data-dir "D:\\HRV\_DATA\\hrv dataset\\data\\final" --model-dir "models"
+
+# ```
+
+# 
+
+# \---
+
+# 
+
+# \# 📈 Model Evaluation
+
+# 
+
+# To evaluate the available models:
+
+# 
+
+# ```powershell
+
+# python evaluate\_models.py
+
+# ```
+
+# 
+
+# \---
+
+# 
+
+# \# 🧪 Testing
+
+# 
+
+# Run the integration tests with:
+
+# 
+
+# ```powershell
+
+# python -m pytest
+
+# ```
+
+# 
+
+# \---
+
+# 
+
+# \# 📡 Cloud Integration — MQTT
+
+# 
+
+# MQTT integration can be enabled through:
+
+# 
+
+# ```text
+
+# config/device.yaml
+
+# ```
+
+# 
+
+# Set:
+
+# 
+
+# ```yaml
+
+# mqtt:
+
+# &#x20; enabled: true
+
+# ```
+
+# 
+
+# PanicGuard can publish information such as:
+
+# 
+
+# ```text
+
+# panicguard/{device\_id}/score
+
+# panicguard/{device\_id}/state
+
+# panicguard/{device\_id}/fusion
+
+# panicguard/{device\_id}/episode
+
+# panicguard/{device\_id}/status
+
+# ```
+
+# 
+
+# The default configuration uses:
+
+# 
+
+# ```text
+
+# test.mosquitto.org
+
+# ```
+
+# 
+
+# For production or real-world deployment, use an appropriately secured MQTT broker rather than a public test broker.
+
+# 
+
+# \---
+
+# 
+
+# \# 📚 Datasets
+
+# 
+
+# PanicGuard uses wearable-biosignal and HRV datasets for model development.
+
+# 
+
+# | Dataset | Subjects | Purpose |
+
+# |---|---:|---|
+
+# | WESAD | 15 | Bi-LSTM, CNN, Autoencoder |
+
+# | HRV Stress Dataset | — | HRV-based Random Forest |
+
+# 
+
+# The datasets are \*\*not included in this repository\*\*.
+
+# 
+
+# Users must obtain the datasets separately and comply with their respective licenses and usage conditions.
+
+# 
+
+# \---
+
+# 
+
+# \# 📁 Project Structure
+
+# 
+
+# ```text
+
+# PanicGuard/
+
+# │
+
+# ├── app/
+
+# │   ├── server.py
+
+# │   └── static/
+
+# │       └── dashboard.html
+
+# │
+
+# ├── cloud/
+
+# │   ├── \_\_init\_\_.py
+
+# │   └── mqtt\_bridge.py
+
+# │
+
+# ├── config/
+
+# │   └── device.yaml
+
+# │
+
+# ├── core/
+
+# │   ├── event\_bus.py
+
+# │   └── state\_machine.py
+
+# │
+
+# ├── interventions/
+
+# │   └── drivers.py
+
+# │
+
+# ├── ml/
+
+# │   ├── inference.py
+
+# │   ├── predictive\_model.py
+
+# │   ├── sequence\_buffer.py
+
+# │   ├── sklearn\_adapter.py
+
+# │   ├── train\_hrv.py
+
+# │   ├── train\_wesad.py
+
+# │   └── wesad\_loader.py
+
+# │
+
+# ├── models/
+
+# │   └── README.md
+
+# │
+
+# ├── sensors/
+
+# │   └── ppg.py
+
+# │
+
+# ├── tests/
+
+# │   └── test\_full\_pipeline.py
+
+# │
+
+# ├── evaluate\_models.py
+
+# ├── main.py
+
+# ├── Dockerfile
+
+# ├── requirements.txt
+
+# ├── start\_panicguard.bat
+
+# ├── .dockerignore
+
+# ├── .gitignore
+
+# └── README.md
+
+# ```
+
+# 
+
+# \---
+
+# 
+
+# \# 🐳 Docker
+
+# 
+
+# Build the Docker image:
+
+# 
+
+# ```bash
+
+# docker build -t panicguard .
+
+# ```
+
+# 
+
+# Run the container:
+
+# 
+
+# ```bash
+
+# docker run -p 8080:8080 panicguard
+
+# ```
+
+# 
+
+# Then open:
+
+# 
+
+# ```text
+
+# http://localhost:8080
+
+# ```
+
+# 
+
+# \---
+
+# 
+
+# \# 🔐 Safety Notice
+
+# 
+
+# PanicGuard is an academic/research prototype.
+
+# 
+
+# It should \*\*not\*\* be relied upon for:
+
+# 
+
+# \- Medical diagnosis
+
+# \- Emergency medical decisions
+
+# \- Clinical treatment
+
+# \- Automatic emergency dispatch
+
+# \- Replacement of qualified healthcare professionals
+
+# 
+
+# Model predictions can contain false positives and false negatives.
+
+# 
+
+# \---
+
+# 
+
+# \# 🎓 Project Objective
+
+# 
+
+# The primary objective of PanicGuard is to demonstrate how multiple wearable-biosignal machine-learning models can be combined into a real-time panic/stress monitoring pipeline.
+
+# 
+
+# The project integrates:
+
+# 
+
+# ```text
+
+# Wearable Biosignals
+
+# &#x20;       ↓
+
+# Signal Processing
+
+# &#x20;       ↓
+
+# Multiple ML Models
+
+# &#x20;       ↓
+
+# Fusion Engine
+
+# &#x20;       ↓
+
+# State Machine
+
+# &#x20;       ↓
+
+# Intervention
+
+# &#x20;       ↓
+
+# Real-Time Dashboard
+
+# ```
+
+# 
+
+# \---
+
+# 
+
+# \# 👨‍💻 Author
+
+# 
+
+# \*\*Bhavatej V\*\*
+
+# 
+
+# Computer Science \& Engineering  
+
+# MS Ramaiah Institute of Technology
+
+# 
+
+# GitHub:
+
+# 
+
+# https://github.com/bhavatejv/PanicGuard
+
+# 
+
+# \---
+
+# 
+
+# \# 📄 License
+
+# 
+
+# This project is licensed under the \*\*MIT License\*\*.
+
+# 
+
+# See the \[`LICENSE`](LICENSE) file for details.
+
