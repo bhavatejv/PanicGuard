@@ -33,3 +33,7 @@ loguru>=0.7.0
 # RPi.GPIO>=0.7.1           # Raspberry Pi GPIO (water pump, LED ring)
 # bleak>=0.21.0             # BLE sensor polling
 # tflite-runtime>=2.14      # Lightweight TFLite inference (replaces tensorflow)
+
+# Testing
+pytest>=9.2.0
+pytest-asyncio>=1.5.0
