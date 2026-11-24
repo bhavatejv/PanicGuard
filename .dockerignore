@@ -1,8 +1,16 @@
 .git
 .env
+
 __pycache__/
 *.pyc
 .venv/
 venv/
+venv311/
+
+data/
+*.log
+
 models/*.keras
 models/*.h5
+models/*.tflite
+models/*.pkl
