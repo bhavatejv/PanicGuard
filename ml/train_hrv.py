@@ -122,7 +122,12 @@ def main():
 
     # Save report
     with open(report_path, "w") as f:
-        f.write(f"HRV Stress Dataset - PanicGuard Classifier\n")
+        f.write("HRV Stress Dataset - PanicGuard Classifier\n")
+        f.write("Evaluation: dataset-provided train/test split\n")
+        f.write(
+            "Limitation: The processed CSV files do not retain participant-level "
+            "identifiers, so subject-independent generalization cannot be independently verified.\n"
+        )
         f.write(f"Features: {feature_cols}\n\n")
         f.write(report)
         f.write(f"\nROC-AUC: {auc:.4f}\n")
